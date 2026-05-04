@@ -137,7 +137,7 @@ When creating an **issue**, respect the following format:
 
 **Title**
 
-    I<issue-number>: <short description of the issue>
+    <short description of the issue>
 
 **Description**
 
