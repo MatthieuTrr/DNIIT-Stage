@@ -6,10 +6,10 @@ class CFGBuilder:
         self.cfg = nx.DiGraph()
         self.node_counter = 0
 
-    def _create_node(self, label, node_type="BasicBlock"):
+    def _create_node(self, label, node_type="BasicBlock", statements=None):
         """Creates new node in the graph and returns its ID."""
         node_id = f"{node_type}_{self.node_counter}"
-        self.cfg.add_node(node_id, label=label, type=node_type)
+        self.cfg.add_node(node_id, label=label, type=node_type, ast_nodes=statements or [])
         self.node_counter += 1
         return node_id
 
@@ -40,7 +40,7 @@ class CFGBuilder:
             nonlocal current_exits, current_basic_block
             if current_basic_block:
                 label = "Block:\n" + "\n".join([type(s).__name__ for s in current_basic_block])
-                block_node = self._create_node(label, "BasicBlock")
+                block_node = self._create_node(label, "BasicBlock", statements=current_basic_block)
                 
                 for ext in current_exits:
                     self.cfg.add_edge(ext, block_node)
