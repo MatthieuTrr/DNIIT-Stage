@@ -13,19 +13,29 @@ This project implements the DH-CNN (Deep Hierarchical Convolutional Neural Netwo
 2. Install the required dependencies via `pip` :
 
 in dev environment :
-bash
+
+``` bash
 pip install -r requirements-dev.txt
+```
 
 in prod environment :
-bash
+
+```bash
 pip install -r requirements.txt
+```
 
 ## Run tests
 To ensure the integrity of the codebase, run the tests using `pytest` :
 
-bash
+```bash
 pytest tests/
+```
 
+Or without logs :
+
+```bash
+pytest -p no:cacheprovider tests/
+```
 ## Project Architecture and Usage
 
 The defect prediction process is divided into three main phases 
