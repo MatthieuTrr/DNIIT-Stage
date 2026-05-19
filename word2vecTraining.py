@@ -33,7 +33,7 @@ def load_dataset_from_jsonl(jsonl_file_path,code_key="whole_func_string"):
     return loaded_codes
 
 # This is the complete pipeline: loads, parses, trains and validates the model.
-def global_training_pipeline(source_data,source_type="folder",embedding_dim=100,window=5,max_files=5000,min_count=5):
+def global_training_pipeline(source_data,source_type="folder",embedding_dim=100,window=5,min_count=5):
     if source_type=="folder":
         java_programs=load_dataset_from_file(source_data)
     elif source_type=="jsonl":
@@ -48,8 +48,6 @@ def global_training_pipeline(source_data,source_type="folder",embedding_dim=100,
         tokens=parse_java_to_ast_vectors(code)
         if tokens:
             sentences.append(tokens)
-            if (idx+1)%max_files==0: # we stop at 5000 source codes by default
-                print(f" ->{idx+1} analyzed programs...")
 
     print(f"Done extracting. {len(sentences)} sequences ready for Word2Vec training")
     model=Word2Vec(
