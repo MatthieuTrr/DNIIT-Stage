@@ -1,3 +1,4 @@
 javalang
 networkx
 nltk
+node2vec
