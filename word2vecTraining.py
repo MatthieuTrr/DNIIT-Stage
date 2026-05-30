@@ -4,7 +4,7 @@ from gensim.models import Word2Vec
 from parse_to_AST import parse_java_to_ast_vectors
 
 
-# The goal of this function is to load the dataset from given path
+#  load the dataset from given path
 def load_dataset_from_file(file_path):
     loaded_codes=[]
     for root, _,files in os.walk(file_path):
@@ -19,20 +19,7 @@ def load_dataset_from_file(file_path):
     print(f"\n")
     return loaded_codes
 
-
-# The goal of this function is to load the dataset from given jsonl files
-def load_dataset_from_jsonl(jsonl_file_path,code_key="whole_func_string"):
-    loaded_codes=[]
-    with open(jsonl_file_path, 'r', encoding='utf-8') as f:
-        for line in f:
-            data=json.loads(line)
-            if code_key in data:
-                loaded_codes.append(data[code_key])
-    print(f"{len(loaded_codes)} Java source files have been found and loaded.")
-    print(f"\n")
-    return loaded_codes
-
-# This is the complete pipeline: loads, parses, trains and validates the model.
+# complete pipeline: loads, parses, trains and validates the model.
 def global_training_pipeline(source_data,source_type="folder",embedding_dim=100,window=5,min_count=5):
     if source_type=="folder":
         java_programs=load_dataset_from_file(source_data)
@@ -46,8 +33,10 @@ def global_training_pipeline(source_data,source_type="folder",embedding_dim=100,
     sentences=[]
     for idx, code in enumerate(java_programs):
         tokens=parse_java_to_ast_vectors(code)
+        tokens=[t[0] for t in tokens if t]
         if tokens:
             sentences.append(tokens)
+    
 
     print(f"Done extracting. {len(sentences)} sequences ready for Word2Vec training")
     model=Word2Vec(
