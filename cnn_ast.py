@@ -39,13 +39,8 @@ def build_syntax_CNN(
     cnn = keras.layers.Dense(FC_UNITS, activation="relu", name="fc")(cnn)
 
     # TEMPORAIRE
-    outputs = keras.layers.Dense(2, activation="softmax", name="output")(cnn)
-    model = keras.Model(inputs=inputs, outputs=outputs, name="DH-CNN_Syntax")
-    model.compile(
-        optimizer="adam",
-        loss="sparse_categorical_crossentropy",
-        metrics=["accuracy"]
-    )
+    #outputs = keras.layers.Dense(2, activation="softmax", name="output")(cnn)
+    
     return model
 
 def prepare_dataset_with_labels(dataset_root, labels_dict, w2v_model):
