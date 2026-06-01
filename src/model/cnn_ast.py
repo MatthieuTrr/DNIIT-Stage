@@ -7,7 +7,7 @@ from tensorflow import keras
 from src.embedding.word2vecTraining import global_training_pipeline
 from src.data_parsing.parse_to_AST import parse_java_to_ast_vectors
 import pandas as pd
-from embedding import prepare_embedding
+from src.embedding.embedding import prepare_embedding
 
 def load_labels_from_csv(csv_path):
     df=pd.read_csv(csv_path)
@@ -36,11 +36,17 @@ def build_syntax_CNN(
     cnn=keras.layers.Conv1D(filters=CNN_FILTERS,kernel_size=KERNEL_SIZE,activation="relu",name="Conv1D")(inputs)
     cnn = keras.layers.GlobalMaxPooling1D(name="global_max_pool")(cnn)
     cnn = keras.layers.Dropout(DROPOUT_RATE, name="dropout")(cnn)
-    cnn = keras.layers.Dense(FC_UNITS, activation="relu", name="fc")(cnn)
+    cnn = keras.layers.Dense(FC_UNITS, activation="sigmoid", name="fc")(cnn)
 
-    # TEMPORAIRE
-    #outputs = keras.layers.Dense(2, activation="softmax", name="output")(cnn)
-    
+    # TEMPORAIRE to test AST before adding the merging part with the semantic CNN
+    outputs = keras.layers.Dense(2, activation="softmax", name="output")(cnn)
+
+    model = keras.Model(inputs=inputs, outputs=outputs, name="DH-CNN_Syntax")
+    model.compile(
+        optimizer="adam",
+        loss="sparse_categorical_crossentropy",
+        metrics=["accuracy"]
+    )
     return model
 
 def prepare_dataset_with_labels(dataset_root, labels_dict, w2v_model):
