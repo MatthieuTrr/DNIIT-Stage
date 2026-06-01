@@ -2,3 +2,5 @@ javalang
 networkx
 nltk
 node2vec
+tensorflow
+numpy
