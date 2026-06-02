@@ -1,4 +1,4 @@
-from word2vecTraining import global_training_pipeline, load_dataset_from_file
+from src.embedding.word2vecTraining import global_training_pipeline, load_dataset_from_file
 from src.data_parsing.parse_to_AST import  parse_java_to_ast_vectors
 import numpy as np
 

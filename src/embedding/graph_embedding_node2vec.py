@@ -6,7 +6,7 @@ class GraphEmbedder:
     """
         To handle conversion of NetworkX graphs (CFG + DDG) into numerical vectors using Node2Vec algo
     """
-    def __init__(self, dimensions=100, window=5, min_count=1, batch_words=4, p=1.0, q=1.0):
+    def __init__(self, dimensions=50, window=5, min_count=1, batch_words=4, p=1.0, q=1.0):
         """        
             Args:
                 dimensions: Vector size
@@ -64,7 +64,7 @@ class GraphEmbedder:
 
         return embeddings
 
-def align_and_fuse_embeddings(cfg_vectors: dict, ddg_vectors: dict, ordered_nodes: list, dimensions: int = 100):
+def align_and_fuse_embeddings(cfg_vectors: dict, ddg_vectors: dict, ordered_nodes: list, dimensions: int = 50):
     """
         Merging CFG and DDG embeddings by aligning nodes in a specific order
         Returns a Numpy matrix of size (n, dimensions).
@@ -81,7 +81,7 @@ def align_and_fuse_embeddings(cfg_vectors: dict, ddg_vectors: dict, ordered_node
     return final_matrix
 
 def generate_semantic_embeddings(cfg: nx.DiGraph, ddg: nx.DiGraph):
-    embedder = GraphEmbedder(dimensions=100)
+    embedder = GraphEmbedder(dimensions=50)
     cfg_vectors = embedder.embed_graph(cfg)
     ddg_vectors = embedder.embed_graph(ddg)
 
