@@ -1,8 +1,9 @@
 import tensorflow as tf
 from tensorflow.keras.layers import Input, Conv1D, GlobalMaxPooling1D, Dropout, Dense
 from tensorflow.keras.models import Model
+from src.utils.config import Config
 
-def build_semantic_level_cnn(sequence_length=50, embedding_dim=100, filters=128, kernel_size=5, dropout_rate=0.5):
+def build_semantic_level_cnn(sequence_length=Config.MAX_TOKENS, embedding_dim=Config.EMBEDDING_DIM, filters=Config.CNN_FILTERS, kernel_size=Config.KERNEL_SIZE, dropout_rate=Config.DROPOUT_RATE):
     """
     Constructs the Semantic-level DH-CNN branch
     
@@ -35,7 +36,7 @@ def build_semantic_level_cnn(sequence_length=50, embedding_dim=100, filters=128,
     x = Dropout(dropout_rate, name="semantic_dropout")(x)
     
     # Fully Connected Layer - fusion
-    outputs = Dense(10, activation='sigmoid', name="semantic_fully_connected")(x)
+    outputs = Dense(Config.FC_UNITS, activation='sigmoid', name="semantic_fully_connected")(x)
     
     # model creation
     model = Model(inputs=inputs, outputs=outputs, name="Semantic_Level_DH_CNN")

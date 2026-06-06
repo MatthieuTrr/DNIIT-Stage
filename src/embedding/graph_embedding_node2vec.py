@@ -1,12 +1,13 @@
 import networkx as nx
 from node2vec import Node2Vec
 import numpy as np
+from src.utils.config import Config
 
 class GraphEmbedder:
     """
         To handle conversion of NetworkX graphs (CFG + DDG) into numerical vectors using Node2Vec algo
     """
-    def __init__(self, dimensions=50, window=5, min_count=1, batch_words=4, p=1.0, q=1.0):
+    def __init__(self, dimensions=Config.EMBEDDING_DIM, window=Config.W2V_WINDOW, min_count=Config.W2V_MIN_COUNT, batch_words=Config.N2V_batch_words, p=Config.N2V_P, q=Config.N2V_Q):
         """        
             Args:
                 dimensions: Vector size
@@ -23,7 +24,7 @@ class GraphEmbedder:
         self.p = p
         self.q = q
 
-    def embed_graph(self, graph: nx.DiGraph, walk_length=80, num_walks=10):
+    def embed_graph(self, graph: nx.DiGraph, walk_length=Config.N2V_WALK_LENGTH, num_walks=Config.N2V_NUM_WALKS):
         """
             Generates random walks and trains embedding model
         
@@ -64,13 +65,13 @@ class GraphEmbedder:
 
         return embeddings
 
-def align_and_fuse_embeddings(cfg_vectors: dict, ddg_vectors: dict, ordered_nodes: list, dimensions: int = 50):
+def align_and_fuse_embeddings(cfg_vectors: dict, ddg_vectors: dict, ordered_nodes: list, dimensions: int = 50, max_nodes: int = 50):
     """
         Merging CFG and DDG embeddings by aligning nodes in a specific order
         Returns a Numpy matrix of size (n, dimensions).
     """
     n = len(ordered_nodes)
-    final_matrix = np.zeros((n, dimensions))
+    final_matrix = np.zeros((max_nodes, dimensions))
     
     for i, node in enumerate(ordered_nodes):
         vec_c = cfg_vectors.get(node, np.zeros(dimensions))
@@ -80,8 +81,8 @@ def align_and_fuse_embeddings(cfg_vectors: dict, ddg_vectors: dict, ordered_node
         
     return final_matrix
 
-def generate_semantic_embeddings(cfg: nx.DiGraph, ddg: nx.DiGraph):
-    embedder = GraphEmbedder(dimensions=50)
+def generate_semantic_embeddings(cfg: nx.DiGraph, ddg: nx.DiGraph, dimensions=Config.EMBEDDING_DIM):
+    embedder = GraphEmbedder(dimensions)
     cfg_vectors = embedder.embed_graph(cfg)
     ddg_vectors = embedder.embed_graph(ddg)
 
