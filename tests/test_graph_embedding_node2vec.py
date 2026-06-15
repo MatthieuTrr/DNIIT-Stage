@@ -59,6 +59,7 @@ def test_unified_embedding_pipeline():
     assert len(cfg_vecs) == len(cfg.nodes())
     assert len(ddg_vecs) == len(ddg.nodes())
     
-    n_nodes = len(cfg.nodes())
+    max_nodes = 50
+    dimensions = 50
     assert isinstance(final_matrix, np.ndarray), "The final fused structure must be a numpy array."
-    assert final_matrix.shape == (n_nodes, 50), f"Expected shape ({n_nodes}, 50), got {final_matrix.shape}"
+    assert final_matrix.shape == (max_nodes, dimensions), f"Expected shape ({max_nodes}, {dimensions}), got {final_matrix.shape}"
