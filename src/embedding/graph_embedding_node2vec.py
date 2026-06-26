@@ -74,6 +74,8 @@ def align_and_fuse_embeddings(cfg_vectors: dict, ddg_vectors: dict, ordered_node
     final_matrix = np.zeros((max_nodes, dimensions))
     
     for i, node in enumerate(ordered_nodes):
+        if i>= max_nodes:
+            break
         vec_c = cfg_vectors.get(node, np.zeros(dimensions))
         vec_d = ddg_vectors.get(node, np.zeros(dimensions))
         

@@ -33,10 +33,8 @@ def build_semantic_level_cnn(sequence_length=Config.MAX_TOKENS, embedding_dim=Co
     x = GlobalMaxPooling1D(name="semantic_maxpool")(x)
     
     # Dropout Layer
-    x = Dropout(dropout_rate, name="semantic_dropout")(x)
+    outputs = Dropout(dropout_rate, name="semantic_dropout")(x)
     
-    # Fully Connected Layer - fusion
-    outputs = Dense(Config.FC_UNITS, activation='sigmoid', name="semantic_fully_connected")(x)
     
     # model creation
     model = Model(inputs=inputs, outputs=outputs, name="Semantic_Level_DH_CNN")
