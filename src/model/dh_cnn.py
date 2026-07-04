@@ -13,13 +13,13 @@ def build_final_dh_cnn():
     ast_input = ast_model.input 
     semantic_input = semantic_model.input
 
-    ast_features = ast_model.output
-    semantic_features = semantic_model.output
+    Cs = ast_model.output
+    Cg = semantic_model.output
 
-    merged_features = Concatenate(name="merging_layer")([ast_features, semantic_features])
-
-    final_output = Dense(2, activation="softmax", name="final_classification")(merged_features)
-
+    syntax_gate=Dense(10,activation="sigmoid", use_bias=True, name="syntax_gate")(Cs)
+    semantic_gate =Dense(10, activation="sigmoid", use_bias=True, name="semantic_gate")(Cg)
+    Gm=Concatenate(name="merging_layer")([syntax_gate,semantic_gate])
+    final_output=Dense(2, activation="softmax", name="final_classification")(Gm)
     final_model = Model(
         inputs=[ast_input, semantic_input], 
         outputs=final_output, 

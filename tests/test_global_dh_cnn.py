@@ -10,23 +10,23 @@ def test_final_dh_cnn_architecture():
         takes 2 inputs (Syntaxic and Semantic), and outputs a binary prediction.
     """
     model = build_final_dh_cnn()
-    
+
     assert len(model.inputs) == 2, "The final model must take exactly 2 inputs (Syntaxic and Semantic)."
-    
+
     batch_size = 2
-    sequence_length = Config.MAX_TOKENS
-    embedding_dim = Config.EMBEDDING_DIM 
-    
-    dummy_syntaxic = np.random.rand(batch_size, sequence_length, embedding_dim)
-    dummy_semantic = np.random.rand(batch_size, sequence_length, embedding_dim)
-    
+
+    dummy_syntaxic = np.random.rand(batch_size, Config.MAX_TOKENS, Config.AST_EMBEDDING)  # ← (2, 50, 100)
+    dummy_semantic = np.random.rand(batch_size, Config.MAX_TOKENS, Config.EMBEDDING_DIM)  # ← (2, 50, 50)
+
     output = model([dummy_syntaxic, dummy_semantic])
-    
+
     assert isinstance(output, tf.Tensor), "Output should be a TensorFlow Tensor."
-    assert output.shape == (batch_size, 2), f"Expected shape ({batch_size}, 2), but got {output.shape}"
-    
+    assert output.shape == (batch_size, 2), \
+        f"Expected shape ({batch_size}, 2), but got {output.shape}"
+
     final_layer = model.layers[-1]
-    assert final_layer.activation.__name__ == 'softmax', "The final layer MUST use Softmax activation."
-    
+    assert final_layer.activation.__name__ == 'softmax', \
+        "The final layer MUST use Softmax activation."
+
     print("\n--- Full DH-CNN Architecture ---")
     model.summary()

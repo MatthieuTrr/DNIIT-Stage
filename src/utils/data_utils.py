@@ -3,7 +3,7 @@ import numpy as np
 import pandas as pd
 
 from src.embedding.embedding import prepare_embedding
-
+from src.utils.config import Config
 from src.data_parsing.parse_to_CFG import parse_java_to_cfg
 from src.data_parsing.parse_to_DDG import parse_cfg_to_ddg
 from src.data_parsing.parse_to_DFG import parse_cfg_to_dfg
@@ -59,16 +59,20 @@ def prepare_dual_dataset(dataset_root, labels_dict, w2v_model):
                 ast_matrix = prepare_embedding(code, w2v_model)
                 
                 # CFG and DDG and DFG
-                cfg = parse_java_to_cfg(code)
-                ddg = parse_cfg_to_ddg(cfg)
-                dfg = parse_cfg_to_dfg(cfg)
-                _, _, _, semantic_matrix = generate_semantic_embeddings(cfg, ddg, dfg)
+                try:
+                    cfg = parse_java_to_cfg(code)
+                    ddg = parse_cfg_to_ddg(cfg)
+                    dfg = parse_cfg_to_dfg(cfg)
+                    _, _, _, semantic_matrix = generate_semantic_embeddings(cfg, ddg, dfg)
                 
+                except Exception as e:
+                    print(f" Empty matrix for {file}: {e}")
+                    semantic_matrix=np.zeros((Config.MAX_TOKENS, Config.EMBEDDING_DIM))
                 X_ast.append(ast_matrix)
                 X_semantic.append(semantic_matrix)
                 y.append(labels_dict[file])
                 
             except Exception as e:
-                print(f"  Skipped {file} due to error: {e}")
+                print(f"  Skipped {file} due to AST error: {e}")
                 
     return np.array(X_ast), np.array(X_semantic), np.array(y)

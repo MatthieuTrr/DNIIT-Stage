@@ -1,72 +1,93 @@
 import os
 import numpy as np
-from sklearn.model_selection import train_test_split
 from sklearn.metrics import precision_score, recall_score, f1_score, roc_auc_score
+from sklearn.utils.class_weight import compute_class_weight
 import tensorflow as tf
-
 from src.utils.data_utils import load_labels_from_csv, prepare_dual_dataset
 from src.embedding.word2vecTraining import global_training_pipeline
 from src.model.dh_cnn import build_final_dh_cnn
-from src.utils.config  import Config
+from src.utils.config import Config
 
-def train_dh_cnn_end_to_end(dataset_path, csv_path, epochs=Config.EPOCHS, batch_size=Config.BATCH_SIZE):
+
+def train_single_run(X_syn_train, X_sem_train, y_train,
+                     X_syn_test, X_sem_test, y_test,
+                     epochs=Config.EPOCHS, batch_size=Config.BATCH_SIZE):
     """
-    Executes the end-to-end training pipeline for the DH-CNN model.
-    
-    This pipeline trains the Word2Vec model, prepares the dual dataset (Syntaxic 
-    and Semantic features), builds the final DH-CNN architecture, trains the neural 
-    network with the dual inputs, and evaluates its performance on the test set.
-
-    Args:
-        dataset_path (str): The root directory path containing the Java source files.
-        csv_path (str): The file path to the CSV containing the defect labels.
-        epochs (int, optional): The number of epochs for training. Defaults to Config.EPOCHS.
-        batch_size (int, optional): The batch size for training. Defaults to Config.BATCH_SIZE.
-        
-    Returns:
-        tuple: A tuple containing the trained Keras model and the training history.
+    Trains one fresh model instance and returns its metrics.
+    Called repeatedly by the main loop for averaging over 30 runs.
     """
-    w2v_model = global_training_pipeline(dataset_path, source_type="folder", embedding_dim=Config.EMBEDDING_DIM, window=Config.WINDOW_SIZE, min_count=Config.MIN_COUNT)
-    
-    if w2v_model is None:
-        return None, None
-
-    labels_dict = load_labels_from_csv(csv_path)
-    X_syntaxic, X_semantic, y = prepare_dual_dataset(dataset_path, labels_dict, w2v_model)
-    
-    X_syn_train, X_syn_test, X_sem_train, X_sem_test, y_train, y_test = train_test_split(
-        X_syntaxic, X_semantic, y, test_size=0.2, random_state=42, stratify=y
-    )
+    classes = np.unique(y_train)
+    weights = compute_class_weight(class_weight="balanced", classes=classes, y=y_train)
+    class_weight_dict = dict(zip(classes.tolist(), weights.tolist()))
 
     model = build_final_dh_cnn()
-    
-    history = model.fit(
+
+    model.fit(
         x=[X_syn_train, X_sem_train],
         y=y_train,
         epochs=epochs,
         batch_size=batch_size,
         validation_split=0.1,
-        verbose=1
+        class_weight=class_weight_dict,
+        verbose=0
     )
 
-    y_proba = model.predict([X_syn_test, X_sem_test]) 
+    y_proba = model.predict([X_syn_test, X_sem_test], verbose=0)
     y_pred  = np.argmax(y_proba, axis=1)
- 
+
     precision = precision_score(y_test, y_pred, zero_division=0)
     recall    = recall_score(y_test, y_pred, zero_division=0)
     f1        = f1_score(y_test, y_pred, zero_division=0)
     auc       = roc_auc_score(y_test, y_proba[:, 1]) if len(np.unique(y_test)) > 1 else float("nan")
- 
-    print(f"Precision : {precision:.4f}")
-    print(f"Recall    : {recall:.4f}")
-    print(f"F1        : {f1:.4f}")
-    print(f"AUC       : {auc:.4f}")
- 
-    return model, history
 
+    print(f"  P={precision:.4f}  R={recall:.4f}  F1={f1:.4f}  AUC={auc:.4f}")
+    return np.array([precision, recall, f1, auc])
+
+
+N_RUNS = 30
 
 if __name__ == "__main__":
-    DATASET_PATH = "src/data/raw/test_java/jakarta-log4j-1.1.3/" # a changer selon chemin/fichier de dataset
-    CSV_PATH     = "src/data/raw/test_java/log4j-1.1.csv"
-    
-    train_dh_cnn_end_to_end(DATASET_PATH, CSV_PATH)
+    TRAIN_DATASET_PATH = "src/data/raw/test_java/jedit40source/jEdit/"
+    TRAIN_CSV_PATH     = "src/data/raw/test_java/jedit40source/jedit-4.0.csv"
+    TEST_DATASET_PATH  = "src/data/raw/test_java/jedit41source/jEdit"
+    TEST_CSV_PATH      = "src/data/raw/test_java/jedit41source/jedit-4.1.csv"
+
+    # Feature extraction — done ONCE (W2V is seeded, Node2Vec re-runs each iteration)
+    w2v_model = global_training_pipeline(
+        TRAIN_DATASET_PATH, source_type="folder",
+        embedding_dim=Config.AST_EMBEDDING,
+        window=Config.WINDOW_SIZE,
+        min_count=Config.MIN_COUNT
+    )
+
+    if w2v_model is None:
+        print("ERROR: Word2Vec training failed. Aborting.")
+        exit()
+
+    train_labels = load_labels_from_csv(TRAIN_CSV_PATH)
+    test_labels  = load_labels_from_csv(TEST_CSV_PATH)
+
+    # 30 independent runs — Node2Vec and model weights are re-randomised each time
+    results = np.zeros(4)
+    for i in range(N_RUNS):
+        print(f"Run {i+1}/{N_RUNS}")
+
+        X_syn_train, X_sem_train, y_train = prepare_dual_dataset(
+            TRAIN_DATASET_PATH, train_labels, w2v_model
+        )
+        X_syn_test, X_sem_test, y_test = prepare_dual_dataset(
+            TEST_DATASET_PATH, test_labels, w2v_model
+        )
+
+        metrics = train_single_run(
+            X_syn_train, X_sem_train, y_train,
+            X_syn_test,  X_sem_test,  y_test
+        )
+        results += metrics
+
+    avg = results / N_RUNS
+    print(f"\nAverage over {N_RUNS} runs:")
+    print(f"  Precision : {avg[0]:.4f}")
+    print(f"  Recall    : {avg[1]:.4f}")
+    print(f"  F1        : {avg[2]:.4f}")
+    print(f"  AUC       : {avg[3]:.4f}")
