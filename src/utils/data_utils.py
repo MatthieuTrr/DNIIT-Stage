@@ -6,6 +6,7 @@ from src.embedding.embedding import prepare_embedding
 
 from src.data_parsing.parse_to_CFG import parse_java_to_cfg
 from src.data_parsing.parse_to_DDG import parse_cfg_to_ddg
+from src.data_parsing.parse_to_DFG import parse_cfg_to_dfg
 from src.embedding.graph_embedding_node2vec import generate_semantic_embeddings
 
 
@@ -57,10 +58,11 @@ def prepare_dual_dataset(dataset_root, labels_dict, w2v_model):
                 # AST
                 ast_matrix = prepare_embedding(code, w2v_model)
                 
-                # CFG and DDG
+                # CFG and DDG and DFG
                 cfg = parse_java_to_cfg(code)
                 ddg = parse_cfg_to_ddg(cfg)
-                _, _, semantic_matrix = generate_semantic_embeddings(cfg, ddg)
+                dfg = parse_cfg_to_dfg(cfg)
+                _, _, _, semantic_matrix = generate_semantic_embeddings(cfg, ddg, dfg)
                 
                 X_ast.append(ast_matrix)
                 X_semantic.append(semantic_matrix)
