@@ -14,10 +14,32 @@ def load_labels_from_csv(csv_path):
     """ Charge the csv file and create a mapping from Java file names to their corresponding bug labels (0 or 1) """
     df = pd.read_csv(csv_path)
     labels = {}
+
+    name_col = None
+    possible_name_columns = ["name.1", "name", "filename", "class", "ClassName"]
+    for col in possible_name_columns:
+        if col in df.columns:
+            name_col = col
+            break
+            
+    if name_col is None:
+        raise ValueError(f"Impossible de trouver la colonne des noms dans {csv_path}. Colonnes disponibles : {df.columns.tolist()}")
+    
+    bug_col = "bug" if "bug" in df.columns else "bugs"
+
     for _, row in df.iterrows():
-        class_name = row["name.1"]
-        file_name = class_name.split(".")[-1] + ".java"
-        if int(row["bug"]) > 0:
+        class_name = row.get(name_col)
+
+        if pd.isna(class_name):
+            continue
+
+        file_name = str(class_name).split(".")[-1] + ".java"
+
+        bug_val = row.get(bug_col, 0)
+        if pd.isna(bug_val):
+            bug_val = 0
+
+        if int(bug_val) > 0:
             bug_label = 1
         else:
             bug_label = 0
