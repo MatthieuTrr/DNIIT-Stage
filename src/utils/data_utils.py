@@ -6,6 +6,7 @@ from src.embedding.embedding import prepare_embedding
 from src.utils.config import Config
 from src.data_parsing.parse_to_CFG import parse_java_to_cfg
 from src.data_parsing.parse_to_DDG import parse_cfg_to_ddg
+from src.data_parsing.parse_to_DFG import parse_cfg_to_dfg
 from src.embedding.graph_embedding_node2vec import generate_semantic_embeddings
 
 
@@ -13,10 +14,32 @@ def load_labels_from_csv(csv_path):
     """ Charge the csv file and create a mapping from Java file names to their corresponding bug labels (0 or 1) """
     df = pd.read_csv(csv_path)
     labels = {}
+
+    name_col = None
+    possible_name_columns = ["name.1", "name", "filename", "class", "ClassName"]
+    for col in possible_name_columns:
+        if col in df.columns:
+            name_col = col
+            break
+            
+    if name_col is None:
+        raise ValueError(f"Impossible de trouver la colonne des noms dans {csv_path}. Colonnes disponibles : {df.columns.tolist()}")
+    
+    bug_col = "bug" if "bug" in df.columns else "bugs"
+
     for _, row in df.iterrows():
-        class_name = row["name.1"]
-        file_name = class_name.split(".")[-1] + ".java"
-        if int(row["bug"]) > 0:
+        class_name = row.get(name_col)
+
+        if pd.isna(class_name):
+            continue
+
+        file_name = str(class_name).split(".")[-1] + ".java"
+
+        bug_val = row.get(bug_col, 0)
+        if pd.isna(bug_val):
+            bug_val = 0
+
+        if int(bug_val) > 0:
             bug_label = 1
         else:
             bug_label = 0
@@ -57,11 +80,12 @@ def prepare_dual_dataset(dataset_root, labels_dict, w2v_model):
                 # AST
                 ast_matrix = prepare_embedding(code, w2v_model)
                 
-                # CFG and DDG
+                # CFG and DDG and DFG
                 try:
                     cfg = parse_java_to_cfg(code)
                     ddg = parse_cfg_to_ddg(cfg)
-                    _, _, semantic_matrix = generate_semantic_embeddings(cfg, ddg)
+                    dfg = parse_cfg_to_dfg(cfg)
+                    _, _, _, semantic_matrix = generate_semantic_embeddings(cfg, ddg, dfg)
                 
                 except Exception as e:
                     print(f" Empty matrix for {file}: {e}")

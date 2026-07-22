@@ -3,6 +3,7 @@ import networkx as nx
 import numpy as np
 from src.data_parsing.parse_to_CFG import parse_java_to_cfg
 from src.data_parsing.parse_to_DDG import parse_cfg_to_ddg
+from src.data_parsing.parse_to_DFG import parse_cfg_to_dfg
 from src.embedding.graph_embedding_node2vec import GraphEmbedder, generate_semantic_embeddings
 
 def test_node2vec_dimensions():
@@ -51,13 +52,16 @@ def test_unified_embedding_pipeline():
     """
     cfg = parse_java_to_cfg(code)
     ddg = parse_cfg_to_ddg(cfg)
+    dfg = parse_cfg_to_dfg(cfg)
     
-    cfg_vecs, ddg_vecs, final_matrix = generate_semantic_embeddings(cfg, ddg)
+    cfg_vecs, ddg_vecs, dfg_vecs, final_matrix = generate_semantic_embeddings(cfg, ddg, dfg)
     
     assert isinstance(cfg_vecs, dict)
     assert isinstance(ddg_vecs, dict)
+    assert isinstance(dfg_vecs, dict)
     assert len(cfg_vecs) == len(cfg.nodes())
     assert len(ddg_vecs) == len(ddg.nodes())
+    assert len(dfg_vecs) == len(dfg.nodes())
     
     max_nodes = 50
     dimensions = 50

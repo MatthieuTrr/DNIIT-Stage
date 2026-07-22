@@ -5,7 +5,7 @@ from src.utils.config import Config
 
 class GraphEmbedder:
     """
-        To handle conversion of NetworkX graphs (CFG + DDG) into numerical vectors using Node2Vec algo
+        To handle conversion of NetworkX graphs (CFG + DDG + DFG) into numerical vectors using Node2Vec algo
     """
     def __init__(self, dimensions=Config.EMBEDDING_DIM, window=Config.W2V_WINDOW, min_count=Config.W2V_MIN_COUNT, batch_words=Config.N2V_batch_words, p=Config.N2V_P, q=Config.N2V_Q):
         """        
@@ -29,7 +29,7 @@ class GraphEmbedder:
             Generates random walks and trains embedding model
         
             Args:
-                graph: CFG or DDG
+                graph: CFG, DDG or DFG
                 walk_length: The length of each random walk
                 num_walks: Number of random walks/node
                 
@@ -65,31 +65,34 @@ class GraphEmbedder:
 
         return embeddings
 
-def align_and_fuse_embeddings(cfg_vectors: dict, ddg_vectors: dict, ordered_nodes: list, dimensions: int = 50, max_nodes: int = 50):
+def align_and_fuse_embeddings(cfg_vectors: dict, ddg_vectors: dict, dfg_vectors: dict, ordered_nodes: list, dimensions: int = 50, max_nodes: int = 50):
     """
-        Merging CFG and DDG embeddings by aligning nodes in a specific order
-        Returns a Numpy matrix of size (n, dimensions).
+        Merging CFG, DDG and DFG embeddings by aligning nodes in a specific order
+        Returns a Numpy matrix of size (max_nodes, dimensions).
     """
     n = len(ordered_nodes)
     final_matrix = np.zeros((max_nodes, dimensions))
     
     for i, node in enumerate(ordered_nodes):
-        if i>= max_nodes:
+        if i >= max_nodes:
             break
+            
         vec_c = cfg_vectors.get(node, np.zeros(dimensions))
         vec_d = ddg_vectors.get(node, np.zeros(dimensions))
+        vec_f = dfg_vectors.get(node, np.zeros(dimensions))
         
-        final_matrix[i] = (vec_c + vec_d) / 2.0
+        final_matrix[i] = (vec_c + vec_d + vec_f) / 3.0
         
     return final_matrix
 
-def generate_semantic_embeddings(cfg: nx.DiGraph, ddg: nx.DiGraph, dimensions=Config.EMBEDDING_DIM):
+def generate_semantic_embeddings(cfg: nx.DiGraph, ddg: nx.DiGraph, dfg: nx.DiGraph, dimensions=Config.EMBEDDING_DIM):
     embedder = GraphEmbedder(dimensions)
     cfg_vectors = embedder.embed_graph(cfg)
     ddg_vectors = embedder.embed_graph(ddg)
+    dfg_vectors = embedder.embed_graph(dfg)
 
     ordered_nodes = list(cfg.nodes())
-    final_graph_matrix = align_and_fuse_embeddings(cfg_vectors, ddg_vectors, ordered_nodes, embedder.dimensions)
+    final_graph_matrix = align_and_fuse_embeddings(cfg_vectors, ddg_vectors, dfg_vectors, ordered_nodes, embedder.dimensions)
 
     
-    return cfg_vectors, ddg_vectors, final_graph_matrix
+    return cfg_vectors, ddg_vectors, dfg_vectors, final_graph_matrix

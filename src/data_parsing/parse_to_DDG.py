@@ -45,9 +45,18 @@ class DDGBuilder:
         for node in self.cfg.nodes():
             ast_nodes = self.cfg.nodes[node].get('ast_nodes', [])
             node_vars[node] = self._extract_def_use_from_ast(ast_nodes)
-            reachable = {node: nx.descendants(self.cfg, node) for node in self.cfg.nodes() }
+            
+        reachable = {}
+        for node in self.cfg.nodes():
+            defs_a, _ = node_vars[node]
+            if defs_a:
+                reachable[node] = nx.descendants(self.cfg, node)
+
         for node_a in self.cfg.nodes():
             defs_a, _ = node_vars[node_a]
+            
+            if not defs_a:
+                continue
             
             for var in defs_a:
                 for node_b in reachable[node_a]:
@@ -56,8 +65,7 @@ class DDGBuilder:
                         
                     _, uses_b = node_vars[node_b]
                     if var in uses_b:
-                        if nx.has_path(self.cfg, node_a, node_b):
-                            self.ddg.add_edge(node_a, node_b, variable=var, type="DataDependency")
+                        self.ddg.add_edge(node_a, node_b, variable=var, type="DataDependency")
         
         return self.ddg
 def parse_cfg_to_ddg(cfg):
