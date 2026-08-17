@@ -4,29 +4,38 @@ import tensorflow as tf
 from src.model.dh_cnn import build_final_dh_cnn
 from src.utils.config import Config
 
-def test_final_dh_cnn_architecture():
+def test_final_dh_cnn_w2v_architecture(monkeypatch):
     """
-        Test: Validates that the global DH-CNN model correctly assembles both branches,
-        takes 2 inputs (Syntaxic and Semantic), and outputs a binary prediction.
+        Test: Validates that the global DH-CNN model dynamically assembled for Word2Vec (2 Inputs).
     """
+    monkeypatch.setattr(Config, "SYNTAX_MODE", "word2vec")
     model = build_final_dh_cnn()
 
-    assert len(model.inputs) == 2, "The final model must take exactly 2 inputs (Syntaxic and Semantic)."
+    assert len(model.inputs) == 2, "The final model must take exactly 2 inputs."
 
     batch_size = 2
 
-    dummy_syntaxic = np.random.rand(batch_size, Config.MAX_TOKENS, Config.AST_EMBEDDING)  # ← (2, 50, 100)
-    dummy_semantic = np.random.rand(batch_size, Config.MAX_TOKENS, Config.EMBEDDING_DIM)  # ← (2, 50, 50)
+    dummy_syntaxic = np.random.rand(batch_size, Config.W2V_MAX_TOKENS, Config.W2V_EMBEDDING_DIM) 
+    dummy_semantic = np.random.rand(batch_size, Config.MAX_TOKENS, Config.EMBEDDING_DIM) 
 
     output = model([dummy_syntaxic, dummy_semantic])
+    assert output.shape == (batch_size, 2)
+    assert model.layers[-1].activation.__name__ == 'softmax'
 
-    assert isinstance(output, tf.Tensor), "Output should be a TensorFlow Tensor."
-    assert output.shape == (batch_size, 2), \
-        f"Expected shape ({batch_size}, 2), but got {output.shape}"
+def test_final_dh_cnn_codebert_architecture(monkeypatch):
+    """
+        Test: Validates that the global DH-CNN model dynamically assembled for CodeBERT (3 Inputs).
+    """
+    monkeypatch.setattr(Config, "SYNTAX_MODE", "codebert")
+    model = build_final_dh_cnn()
 
-    final_layer = model.layers[-1]
-    assert final_layer.activation.__name__ == 'softmax', \
-        "The final layer MUST use Softmax activation."
+    assert len(model.inputs) == 3, "CodeBERT model must take exactly 3 inputs."
+    batch_size = 2
 
-    print("\n--- Full DH-CNN Architecture ---")
-    model.summary()
+    dummy_input_ids = np.random.randint(0, 100, size=(batch_size, Config.CODEBERT_MAX_TOKENS))
+    dummy_attention_mask = np.ones((batch_size, Config.CODEBERT_MAX_TOKENS), dtype=np.int32)
+    dummy_semantic = np.random.rand(batch_size, Config.MAX_TOKENS, Config.EMBEDDING_DIM)
+
+    output = model([dummy_input_ids, dummy_attention_mask, dummy_semantic])
+    assert output.shape == (batch_size, 2)
+    assert model.layers[-1].activation.__name__ == 'softmax'

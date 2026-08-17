@@ -1,6 +1,6 @@
 import pytest
 from gensim.models import Word2Vec
-from src.embedding.word2vecTraining import global_training_pipeline
+from src.embedding.syntaxic_training import global_training_pipeline
 
 def test_word2vec_structures():
     """ Test that the Word2Vec model correctly recognizes Java syntax """

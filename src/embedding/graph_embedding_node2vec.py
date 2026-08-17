@@ -45,7 +45,7 @@ class GraphEmbedder:
             num_walks=num_walks,
             p=self.p,
             q=self.q,
-            workers=1,
+            workers=6,
             quiet=True
         )
 

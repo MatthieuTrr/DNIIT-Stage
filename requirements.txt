@@ -7,3 +7,5 @@ gensim
 tensorflow
 pandas
 scikit-learn
+transformers==4.56.2
+tf-keras
